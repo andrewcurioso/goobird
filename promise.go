@@ -17,8 +17,8 @@ type IPromise interface {
 }
 
 type promiseLink struct {
-	cb    func()
-	next  *promiseLink
+	cb   func()
+	next *promiseLink
 }
 
 type SPromise struct {
@@ -26,19 +26,17 @@ type SPromise struct {
 	value interface{}
 	wg    *sync.WaitGroup
 
-	m1    sync.Mutex // Ensures that the chain happens in order
-	m2    sync.Mutex // Ensures that only one link is running at a time
+	listMutex sync.RWMutex
+	listCond  *sync.Cond
 
-	mList *sync.Cond
-
-	head  *promiseLink
-	tail  *promiseLink
+	head *promiseLink
+	tail *promiseLink
 }
 
 var pType = reflect.TypeOf((*IPromise)(nil)).Elem()
 
 func (p *SPromise) push(f func()) {
-	p.m2.Lock()
+	p.listMutex.Lock()
 
 	p.wg.Add(1)
 
@@ -53,19 +51,22 @@ func (p *SPromise) push(f func()) {
 
 	p.tail = &l
 
-	p.mList.Signal()
-	p.m2.Unlock()
+	p.listCond.Signal()
+	p.listMutex.Unlock()
 }
 
 func (p *SPromise) pop() *promiseLink {
 
+	p.listMutex.RLock()
+
 	if p.head == nil {
-		p.mList.L.Lock()
-		p.mList.Wait()
-		p.mList.L.Unlock()
+		p.listCond.L.Lock()
+		p.listCond.Wait()
+		p.listCond.L.Unlock()
 	}
 
-	p.m2.Lock()
+	p.listMutex.RUnlock()
+	p.listMutex.Lock()
 
 	n := p.head
 
@@ -73,15 +74,12 @@ func (p *SPromise) pop() *promiseLink {
 		p.head = n.next
 	}
 
-	p.m2.Unlock()
+	p.listMutex.Unlock()
 
-	return n 
+	return n
 }
 
-
 func (p *SPromise) run() {
-	p.m1.Unlock()
-
 	n := p.pop()
 
 	for n != nil {
@@ -104,7 +102,7 @@ func (p *SPromise) run() {
 func (p *SPromise) Wait() (interface{}, interface{}) {
 	p.wg.Done()
 	p.wg.Wait()
-	p.mList.Signal()
+	p.listCond.Signal()
 
 	return p.value, p.err
 }
@@ -123,12 +121,10 @@ func Create(cb promiseCallback) *SPromise {
 	var p SPromise
 
 	var m sync.Mutex
-	p.mList = sync.NewCond(&m)
+	p.listCond = sync.NewCond(&m)
 
 	p.wg = &sync.WaitGroup{}
 	p.wg.Add(1)
-
-	p.m1.Lock()
 
 	go p.run()
 
