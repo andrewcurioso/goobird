@@ -4,7 +4,6 @@ import (
 	"testing"
 )
 
-
 func TestBasicPromise(t *testing.T) {
 
 	var p *SPromise
