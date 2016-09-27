@@ -16,3 +16,4 @@ Write elegant asynchronous code using promises.
 
 - Documentation
 - Use a single go-routine for serial operations
+- License
