@@ -58,11 +58,11 @@ Uses a single GoRoutine per promise to run serial links in the chain and uses me
 
 ### Features
 
-- All
-- Each
-- Map
-- Reduce
-- Filter
+- **All**: Run an array of promises
+- **Each**: Run a function on all items of an array and return an array
+- **Map**: Run a function on each item of a map and return a map, order not guarenteed
+- **Reduce**: Run a function to reduce an array to a single value, order not guarenteed
+- **Filter**: Run a function to filter an array to contain only specific values
 
 ### Improvements
 
