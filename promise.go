@@ -23,7 +23,7 @@ type SPromise struct {
 
 var pType = reflect.TypeOf((*IPromise)(nil)).Elem()
 
-func run(p *SPromise, f func() ) {
+func run(p *SPromise, f func()) {
 	p.m1.Unlock()
 	p.m2.Lock()
 
