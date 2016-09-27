@@ -93,6 +93,9 @@ func (p *SPromise) run() {
 			if vType.Kind() == reflect.Ptr && vType.Implements(pType) {
 				p.value, p.err = p.value.(*SPromise).Wait()
 			}
+
+		} else {
+			p.value = nil
 		}
 
 		p.wg.Done()
