@@ -11,6 +11,7 @@ type promiseThenCallback func(interface{}) (response interface{}, err interface{
 type IPromise interface {
 	Then(ret promiseThenCallback) *SPromise
 	Wait() (interface{}, interface{})
+	run(f func())
 }
 
 type SPromise struct {
@@ -23,7 +24,7 @@ type SPromise struct {
 
 var pType = reflect.TypeOf((*IPromise)(nil)).Elem()
 
-func run(p *SPromise, f func()) {
+func (p *SPromise) run(f func()) {
 	p.m1.Unlock()
 	p.m2.Lock()
 
@@ -53,7 +54,7 @@ func (p *SPromise) Then(ret promiseThenCallback) *SPromise {
 	p.wg.Add(1)
 
 	p.m1.Lock()
-	go run(p, func() {
+	go p.run(func() {
 		if p.err == nil {
 			p.value, p.err = ret(p.value)
 		}
@@ -69,7 +70,7 @@ func Create(cb promiseCallback) *SPromise {
 	p.wg.Add(2)
 
 	p.m1.Lock()
-	go run(&p, func() {
+	go p.run(func() {
 		p.value, p.err = cb()
 	})
 
