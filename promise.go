@@ -43,7 +43,7 @@ func (p *SPromise) push(f func()) {
 	var l promiseLink
 	l.cb = f
 
-	if p.tail != nil {
+	if p.head != nil {
 		p.tail.next = &l
 	} else {
 		p.head = &l
@@ -56,16 +56,17 @@ func (p *SPromise) push(f func()) {
 }
 
 func (p *SPromise) pop() *promiseLink {
-
 	p.listMutex.RLock()
 
 	if p.head == nil {
+		p.listMutex.RUnlock()
 		p.listCond.L.Lock()
 		p.listCond.Wait()
 		p.listCond.L.Unlock()
+	} else {
+		p.listMutex.RUnlock()
 	}
 
-	p.listMutex.RUnlock()
 	p.listMutex.Lock()
 
 	n := p.head
@@ -95,6 +96,7 @@ func (p *SPromise) run() {
 		}
 
 		p.wg.Done()
+
 		n = p.pop()
 	}
 }
