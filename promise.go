@@ -137,9 +137,9 @@ func (p *SPromise) All() *SPromise {
 			ret := make([]interface{}, s.Len())
 			var err interface{}
 
-			for i:=0; i<s.Len(); i++ {
-				ret[i],err = s.Index(i).Interface().(*SPromise).Wait()
-				if ( err != nil ) {
+			for i := 0; i < s.Len(); i++ {
+				ret[i], err = s.Index(i).Interface().(*SPromise).Wait()
+				if err != nil {
 					p.value, p.err = nil, err
 				}
 			}

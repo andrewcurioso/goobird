@@ -7,7 +7,7 @@ import (
 
 func TestBasicPromise(t *testing.T) {
 
-	x,err := Create(func() (interface{}, interface{}) {
+	x, err := Create(func() (interface{}, interface{}) {
 		return 42, nil
 	}).Wait()
 
@@ -23,7 +23,7 @@ func TestBasicPromise(t *testing.T) {
 
 func TestSleep(t *testing.T) {
 
-	x,err := Create(func() (interface{}, interface{}) {
+	x, err := Create(func() (interface{}, interface{}) {
 		time.Sleep(100 * time.Millisecond)
 		return 42, nil
 	}).Wait()
@@ -40,7 +40,7 @@ func TestSleep(t *testing.T) {
 
 func TestThen(t *testing.T) {
 
-	x,err := Create(func() (interface{}, interface{}) {
+	x, err := Create(func() (interface{}, interface{}) {
 		return 42, nil
 	}).Then(func(ret interface{}) (interface{}, interface{}) {
 		x := ret.(int)
@@ -59,7 +59,7 @@ func TestThen(t *testing.T) {
 
 func TestNestedCreate(t *testing.T) {
 
-	x,err := Create(func() (interface{}, interface{}) {
+	x, err := Create(func() (interface{}, interface{}) {
 		return Create(func() (interface{}, interface{}) { return 42, nil }), nil
 	}).Then(func(ret interface{}) (interface{}, interface{}) {
 		x := ret.(int)
@@ -78,7 +78,7 @@ func TestNestedCreate(t *testing.T) {
 
 func TestNestedThen(t *testing.T) {
 
-	x,err := Create(func() (interface{}, interface{}) {
+	x, err := Create(func() (interface{}, interface{}) {
 		return 42, nil
 	}).Then(func(ret interface{}) (interface{}, interface{}) {
 		x := ret.(int)
@@ -153,7 +153,7 @@ func TestDelayedWait(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 
-	x,err := p.Wait()
+	x, err := p.Wait()
 
 	if err != nil {
 		t.Error("Expected err to be nil got", err)
@@ -166,7 +166,7 @@ func TestDelayedWait(t *testing.T) {
 }
 
 func TestAll(t *testing.T) {
-	x,err := Create(func() (interface{}, interface{}) {
+	x, err := Create(func() (interface{}, interface{}) {
 		return [...]*SPromise{
 			Create(func() (interface{}, interface{}) { return 1, nil }),
 			Create(func() (interface{}, interface{}) { return 2, nil }),
@@ -180,17 +180,17 @@ func TestAll(t *testing.T) {
 
 	xi := x.([]interface{})
 
-	if ( len(xi) != 3 ) {
+	if len(xi) != 3 {
 		t.Error("Expected length of 3 got", len(xi))
 	}
 
 	var sum int
 
-	for i:=0; i<len(xi); i++ {
+	for i := 0; i < len(xi); i++ {
 		sum = sum + xi[i].(int)
 	}
 
-	if ( sum != 6 ) {
+	if sum != 6 {
 		t.Error("Expected sum to be 6 got", sum)
 	}
 }
