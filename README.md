@@ -31,23 +31,35 @@ x = 42
 ### Use of Then to chain promises
 
 ```go
-p := promise.Create(func() (interface{}, interface{}) {
+x,err := promise.Create(func() (interface{}, interface{}) {
   return 42, nil
 }).Then(func(res interface{}) (interface{}, interface{}) {
   x := res.(int)
   return x * 2, nil
-})
+}).Wait()
 ```
 
 ### Nest promises (works in Then too)
 
 ```go
-p := promise.Create(func() (interface{}, interface{}) {
+x,err := promise.Create(func() (interface{}, interface{}) {
   return promise.Create(func() (interface{}, interface{}) { return 42, nil }, nil
 }).Then(func(res interface{}) (interface{}, interface{}) {
   x := res.(int)
   return x * 2
-})
+}).Wait()
+```
+
+### Run arrays/slices of promises
+
+```go
+x,err := promise.Create(func() (interface{}, interface{}) {
+  return [...]*SPromise{
+    Create(func() (interface{}, interface{}) { return 1, nil }),
+    Create(func() (interface{}, interface{}) { return 2, nil }),
+    Create(func() (interface{}, interface{}) { return 3, nil }),
+  }, nil
+}).All().Wait()
 ```
 
 ### Fast
@@ -58,7 +70,6 @@ Uses a single GoRoutine per promise to run serial links in the chain and uses me
 
 ### Features
 
-- **All**: Run an array of promises
 - **Each**: Run a function on all items of an array and return an array
 - **Map**: Run a function on each item of a map and return a map, order not guarenteed
 - **Reduce**: Run a function to reduce an array to a single value, order not guarenteed

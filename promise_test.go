@@ -7,13 +7,9 @@ import (
 
 func TestBasicPromise(t *testing.T) {
 
-	var p *SPromise
-
-	p = Create(func() (res interface{}, err interface{}) {
+	x,err := Create(func() (interface{}, interface{}) {
 		return 42, nil
-	})
-
-	x, err := p.Wait()
+	}).Wait()
 
 	if err != nil {
 		t.Error("Expected err to be nil got", err)
@@ -27,14 +23,10 @@ func TestBasicPromise(t *testing.T) {
 
 func TestSleep(t *testing.T) {
 
-	var p *SPromise
-
-	p = Create(func() (res interface{}, err interface{}) {
+	x,err := Create(func() (interface{}, interface{}) {
 		time.Sleep(100 * time.Millisecond)
 		return 42, nil
-	})
-
-	x, err := p.Wait()
+	}).Wait()
 
 	if err != nil {
 		t.Error("Expected err to be nil got", err)
@@ -48,16 +40,12 @@ func TestSleep(t *testing.T) {
 
 func TestThen(t *testing.T) {
 
-	var p *SPromise
-
-	p = Create(func() (res interface{}, err interface{}) {
+	x,err := Create(func() (interface{}, interface{}) {
 		return 42, nil
 	}).Then(func(ret interface{}) (interface{}, interface{}) {
 		x := ret.(int)
 		return x * 2, nil
-	})
-
-	x, err := p.Wait()
+	}).Wait()
 
 	if err != nil {
 		t.Error("Expected err to be nil got", err)
@@ -71,16 +59,12 @@ func TestThen(t *testing.T) {
 
 func TestNestedCreate(t *testing.T) {
 
-	var p *SPromise
-
-	p = Create(func() (res interface{}, err interface{}) {
-		return Create(func() (res interface{}, err interface{}) { return 42, nil }), nil
+	x,err := Create(func() (interface{}, interface{}) {
+		return Create(func() (interface{}, interface{}) { return 42, nil }), nil
 	}).Then(func(ret interface{}) (interface{}, interface{}) {
 		x := ret.(int)
 		return x * 2, nil
-	})
-
-	x, err := p.Wait()
+	}).Wait()
 
 	if err != nil {
 		t.Error("Expected err to be nil got", err)
@@ -94,16 +78,12 @@ func TestNestedCreate(t *testing.T) {
 
 func TestNestedThen(t *testing.T) {
 
-	var p *SPromise
-
-	p = Create(func() (res interface{}, err interface{}) {
+	x,err := Create(func() (interface{}, interface{}) {
 		return 42, nil
 	}).Then(func(ret interface{}) (interface{}, interface{}) {
 		x := ret.(int)
-		return Create(func() (res interface{}, err interface{}) { return x * 2, nil }), nil
-	})
-
-	x, err := p.Wait()
+		return Create(func() (interface{}, interface{}) { return x * 2, nil }), nil
+	}).Wait()
 
 	if err != nil {
 		t.Error("Expected err to be nil got", err)
@@ -119,7 +99,7 @@ func TestDelayedThen(t *testing.T) {
 
 	var p *SPromise
 
-	p = Create(func() (res interface{}, err interface{}) {
+	p = Create(func() (interface{}, interface{}) {
 		return 42, nil
 	})
 
@@ -144,9 +124,7 @@ func TestDelayedThen(t *testing.T) {
 
 func TestError(t *testing.T) {
 
-	var p *SPromise
-
-	p = Create(func() (res interface{}, err interface{}) {
+	x, err := Create(func() (interface{}, interface{}) {
 		return true, nil
 
 	}).Then(func(ret interface{}) (interface{}, interface{}) {
@@ -155,9 +133,7 @@ func TestError(t *testing.T) {
 	}).Then(func(ret interface{}) (interface{}, interface{}) {
 		t.Error("Then should not execute on error")
 		return true, nil
-	})
-
-	x, err := p.Wait()
+	}).Wait()
 
 	if err != true {
 		t.Error("Expected err to be true got", err)
@@ -167,4 +143,54 @@ func TestError(t *testing.T) {
 		t.Error("Expected x to be nil got", x)
 	}
 
+}
+
+func TestDelayedWait(t *testing.T) {
+
+	p := Create(func() (interface{}, interface{}) {
+		return 42, nil
+	})
+
+	time.Sleep(100 * time.Millisecond)
+
+	x,err := p.Wait()
+
+	if err != nil {
+		t.Error("Expected err to be nil got", err)
+	}
+
+	if x != 42 {
+		t.Error("Expected x to be 42 got", x)
+	}
+
+}
+
+func TestAll(t *testing.T) {
+	x,err := Create(func() (interface{}, interface{}) {
+		return [...]*SPromise{
+			Create(func() (interface{}, interface{}) { return 1, nil }),
+			Create(func() (interface{}, interface{}) { return 2, nil }),
+			Create(func() (interface{}, interface{}) { return 3, nil }),
+		}, nil
+	}).All().Wait()
+
+	if err != nil {
+		t.Error("Expected err to be nil got", err)
+	}
+
+	xi := x.([]interface{})
+
+	if ( len(xi) != 3 ) {
+		t.Error("Expected length of 3 got", len(xi))
+	}
+
+	var sum int
+
+	for i:=0; i<len(xi); i++ {
+		sum = sum + xi[i].(int)
+	}
+
+	if ( sum != 6 ) {
+		t.Error("Expected sum to be 6 got", sum)
+	}
 }

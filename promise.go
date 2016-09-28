@@ -11,6 +11,8 @@ type promiseThenCallback func(interface{}) (response interface{}, err interface{
 type IPromise interface {
 	Then(ret promiseThenCallback) *SPromise
 	Wait() (interface{}, interface{})
+	All() *SPromise
+
 	run()
 	push(f func())
 	pop() *promiseLink
@@ -116,6 +118,35 @@ func (p *SPromise) Then(ret promiseThenCallback) *SPromise {
 	p.push(func() {
 		if p.err == nil {
 			p.value, p.err = ret(p.value)
+		}
+	})
+
+	return p
+}
+
+func (p *SPromise) All() *SPromise {
+	p.push(func() {
+		if p.err == nil {
+
+			s := reflect.ValueOf(p.value)
+
+			if s.Kind() != reflect.Array && s.Kind() != reflect.Slice {
+				panic("Expected a slice or array to be passed to All")
+			}
+
+			ret := make([]interface{}, s.Len())
+			var err interface{}
+
+			for i:=0; i<s.Len(); i++ {
+				ret[i],err = s.Index(i).Interface().(*SPromise).Wait()
+				if ( err != nil ) {
+					p.value, p.err = nil, err
+				}
+			}
+
+			if err == nil {
+				p.value, p.err = ret, nil
+			}
 		}
 	})
 
